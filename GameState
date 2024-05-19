@@ -1,0 +1,110 @@
+public class GameState {
+    private final GameBoard gameBoard;
+    private Player player;
+    private final List<Enemy> enemies;
+    private final List<Upgrade> upgrades;
+
+    public GameState(int rows, int cols) {
+        this.gameBoard = new GameBoard(rows, cols);
+        this.enemies = new ArrayList<>();
+        this.upgrades = new ArrayList<>();
+        initializeGame();
+    }
+
+    public void initializeGame() {
+        Position playerStartPos = new Position(1, 1);
+        player = new Player(playerStartPos, 0, 3);
+        gameBoard.setCell(playerStartPos.row(), playerStartPos.col(), CellType.PLAYER);
+
+        Position enemy1Pos = new Position(2, 2);
+        Position enemy2Pos = new Position(3, 3);
+        enemies.add(new Enemy(enemy1Pos));
+        enemies.add(new Enemy(enemy2Pos));
+        gameBoard.setCell(enemy1Pos.row(), enemy1Pos.col(), CellType.ENEMY);
+        gameBoard.setCell(enemy2Pos.row(), enemy2Pos.col(), CellType.ENEMY);
+
+        Position upgrade1Pos = new Position(1, 2);
+        Position upgrade2Pos = new Position(3, 1);
+        upgrades.add(new Upgrade(upgrade1Pos, "Life"));
+        upgrades.add(new Upgrade(upgrade2Pos, "Life"));
+        gameBoard.setCell(upgrade1Pos.row(), upgrade1Pos.col(), CellType.UPGRADE);
+        gameBoard.setCell(upgrade2Pos.row(), upgrade2Pos.col(), CellType.UPGRADE);
+
+
+        gameBoard.setCell(0, 0, CellType.WALL);
+        gameBoard.setCell(0, 1, CellType.WALL);
+        gameBoard.setCell(0, 2, CellType.WALL);
+        gameBoard.setCell(0, 3, CellType.WALL);
+        gameBoard.setCell(1, 3, CellType.WALL);
+        gameBoard.setCell(2, 3, CellType.WALL);
+        gameBoard.setCell(2, 1, CellType.WALL);
+        gameBoard.setCell(2, 2, CellType.WALL);
+
+    }
+    public boolean isValidMove(Position position) {
+        return (position.row() >= 0) && (position.row() < gameBoard.getBoard().length) &&
+                (position.col() >= 0) && (position.col() < gameBoard.getBoard()[0].length) &&
+                (gameBoard.getCell(position.row(), position.col()) != CellType.WALL);
+    }
+
+    public void checkForCollisions() {
+        for (Enemy enemy : enemies) {
+            if (enemy.position().equals(player.position())) {
+                player = new Player(player.position(), player.score(), player.lives() - 1);
+            }
+        }
+        for (Upgrade upgrade : upgrades) {
+            if (upgrade.position().equals(player.position())) {
+                player = new Player(player.position(), player.score(), player.lives() + 1);
+            }
+        }
+    }
+
+    public void movePlayer(Position newPosition) {
+        if (isValidMove(newPosition)) {
+            gameBoard.setCell(player.position().row(), player.position().col(),CellType.EMPTY);
+            player = new Player(newPosition, player.score(), player.lives());
+            gameBoard.setCell(newPosition.row(), newPosition.col(), CellType.PLAYER);
+            checkForCollisions();
+        }
+    }
+    public void moveEnemies() {
+        for (Enemy enemy : enemies) {
+            Position currentPosition = enemy.position();
+            Position newPosition = getRandomPosition(currentPosition);
+            if (isValidMove(newPosition)) {
+                gameBoard.setCell(currentPosition.row(), currentPosition.col(), CellType.EMPTY);
+                enemy.setPosition(newPosition);
+                gameBoard.setCell(newPosition.row(), newPosition.col(), CellType.ENEMY);
+            }
+        }
+    }
+
+    private Position getRandomPosition(Position position) {
+        List<Position> possiblePositions = new ArrayList<>();
+        possiblePositions.add(new Position(position.row() - 1, position.col()));
+        possiblePositions.add(new Position(position.row() + 1, position.col()));
+        possiblePositions.add(new Position(position.row(), position.col() - 1));
+        possiblePositions.add(new Position(position.row(), position.col() + 1));
+
+        Random random = new Random();
+        return possiblePositions.get(random.nextInt(possiblePositions.size()));
+    }
+
+    public GameBoard getGameBoard() {
+        return gameBoard;
+    }
+
+    public Player getPlayer() {
+        return player;
+    }
+
+    public List<Enemy> getEnemies() {
+        return enemies;
+    }
+
+    public List<Upgrade> getUpgrades() {
+        return upgrades;
+    }
+
+}
